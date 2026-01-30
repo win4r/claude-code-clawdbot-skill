@@ -143,6 +143,38 @@ The wrapper prints commands like:
 
 If Claude Code asks a question mid-run (e.g., “Proceed?”), attach and answer.
 
+## Operational gotchas (learned in practice)
+
+### 1) Vite + ngrok: "Blocked request. This host (...) is not allowed"
+
+If you expose a Vite dev server through ngrok, Vite will block unknown Host headers unless configured.
+
+- **Vite 7** expects `server.allowedHosts` to be `true` or `string[]`.
+  - ✅ Allow all hosts (quick):
+    ```ts
+    server: { host: true, allowedHosts: true }
+    ```
+  - ✅ Allow just your ngrok host (safer):
+    ```ts
+    server: { host: true, allowedHosts: ['xxxx.ngrok-free.app'] }
+    ```
+  - ❌ Do **not** set `allowedHosts: 'all'` (won't work in Vite 7).
+
+After changing `vite.config.*`, restart the dev server.
+
+### 2) Don’t accidentally let your *shell* eat your prompt
+
+When you drive tmux via a shell command (e.g. `tmux send-keys ...`), avoid unescaped **backticks** and shell substitutions in the text you pass.
+They can be interpreted by your shell before the text even reaches Claude Code.
+
+Practical rule:
+- Prefer sending prompts from a file, or ensure the wrapper/script quotes prompt text safely.
+
+### 3) Long-running dev servers should run in a persistent session
+
+In automation environments, backgrounded `vite` / `ngrok` processes can get SIGKILL.
+Prefer running them in a managed background session (Clawdbot exec background) or tmux, and explicitly stop them when done.
+
 ## Bundled script
 
 - `scripts/claude_code_run.py`: wrapper that runs the local `claude` binary with a pseudo-terminal and forwards flags.
