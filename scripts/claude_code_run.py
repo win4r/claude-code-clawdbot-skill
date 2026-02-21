@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import platform
 import shlex
 import subprocess
 import sys
@@ -92,7 +93,12 @@ def run_with_pty(cmd: list[str], cwd: str | None) -> int:
         proc = subprocess.run(cmd, cwd=cwd, text=True)
         return proc.returncode
 
-    proc = subprocess.run([script_bin, "-q", "-c", cmd_str, "/dev/null"], cwd=cwd, text=True)
+    # GNU util-linux script supports: script -q -c "<cmd>" /dev/null
+    # BSD/macOS script uses:         script -q /dev/null <command ...>
+    if platform.system() == "Darwin":
+        proc = subprocess.run([script_bin, "-q", "/dev/null", "sh", "-lc", cmd_str], cwd=cwd, text=True)
+    else:
+        proc = subprocess.run([script_bin, "-q", "-c", cmd_str, "/dev/null"], cwd=cwd, text=True)
     return proc.returncode
 
 
