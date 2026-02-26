@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import platform
 import shlex
 import subprocess
 import sys
@@ -85,14 +86,24 @@ def build_headless_cmd(args: argparse.Namespace) -> list[str]:
 
 
 def run_with_pty(cmd: list[str], cwd: str | None) -> int:
-    cmd_str = " ".join(shlex.quote(c) for c in cmd)
-
     script_bin = which("script")
     if not script_bin:
         proc = subprocess.run(cmd, cwd=cwd, text=True)
         return proc.returncode
 
-    proc = subprocess.run([script_bin, "-q", "-c", cmd_str, "/dev/null"], cwd=cwd, text=True)
+    # macOS uses different syntax for script command
+    # Linux: script -q -c "command" /dev/null
+    # macOS: script /dev/null command [args...]
+    is_macos = platform.system() == "Darwin"
+
+    if is_macos:
+        # macOS syntax: script /dev/null command [args...]
+        proc = subprocess.run([script_bin, "/dev/null"] + cmd, cwd=cwd, text=True)
+    else:
+        # Linux syntax: script -q -c "command" /dev/null
+        cmd_str = " ".join(shlex.quote(c) for c in cmd)
+        proc = subprocess.run([script_bin, "-q", "-c", cmd_str, "/dev/null"], cwd=cwd, text=True)
+
     return proc.returncode
 
 
