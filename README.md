@@ -1,3 +1,5 @@
+# [🚀观看我的哔哩哔哩视频](https://space.bilibili.com/3493277319825652)
+
 # claude-code-clawdbot-skill
 
 A **Clawdbot skill** to run **Claude Code** (Anthropic) on the host via the `claude` CLI (Agent SDK).
